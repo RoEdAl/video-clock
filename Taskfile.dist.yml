@@ -1,0 +1,141 @@
+#
+# Video Clock
+#
+# Reimplementation of video clock from [XtendedGreg/digital-clock-with-video]:
+# - https://github.com/XtendedGreg/digital-clock-with-video
+# - https://youtube.com/live/aa3h_ntRh4I
+#
+# Tested on:
+# - Raspberry Pi OS (Trixie)
+# - Armbian (Trixie)
+#
+
+version: '3'
+
+vars:
+  VIDEO_SOURCE: '{{joinPath .TASKFILE_DIR "background.mp4"}}'
+  FONT_FILE: /usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf
+  SMALL_FONT_SIZE: 30
+  LARGE_FONT_SIZE: 90
+  TEXT_COLOR: white
+  TEXT_BG_COLOR: black@0.5 # Black with 50% opacity
+  FB_DEV: /dev/fb0
+  PIXEL_FMT: rgb565le # rgba
+  FB_SYS_PATH: /sys/class/graphics/fb0
+  CURSOR_BLINK_FILE: /sys/class/graphics/fbcon/cursor_blink
+
+tasks:
+  pre-scale-bg:
+    internal: true
+    requires:
+      vars:
+        - TEMP_VIDEO_FILE
+        - SCREEN_W
+        - SCREEN_H
+    cmds:
+      - >-
+          ffmpeg
+          -xerror
+          -hide_banner
+          -loglevel 'repeat+info'
+          -nostdin
+          -y -i {{.VIDEO_SOURCE | shellQuote}}
+          -filter_complex
+          "scale={{.SCREEN_W}}:{{.SCREEN_H -}},
+          framerate=fps=15,
+          split[v1][i];
+          [i]drawtext=
+          fontfile='{{.FONT_FILE}}':
+          fontsize={{.LARGE_FONT_SIZE}}:
+          fontcolor={{.TEXT_COLOR}}:
+          box=1:
+          boxcolor={{.TEXT_BG_COLOR}}:
+          boxborderw=15:
+          text='Loading...':
+          x=(w-text_w)/2:
+          y=(h-text_h)/2[v2]"
+          -map '[v1]'
+          -c:v libx264
+          -preset ultrafast
+          -tune fastdecode
+          -crf 35
+          -an
+          {{.TEMP_VIDEO_FILE | shellQuote}}
+          -map '[v2]'
+          -pix_fmt {{.PIXEL_FMT}}
+          -f fbdev {{.FB_DEV}}
+
+  show-clock:
+    internal: true
+    requires:
+      vars:
+        - TEMP_VIDEO_FILE
+    cmds:
+      - >-
+        ffmpeg
+        -xerror
+        -hide_banner
+        -loglevel 'repeat+info'
+        -nostats
+        -nostdin
+        -re
+        -fflags +genpts
+        -stream_loop -1
+        -i {{.TEMP_VIDEO_FILE}}
+        -vf "drawtext=
+        fontfile='{{.FONT_FILE}}':
+        fontsize={{.SMALL_FONT_SIZE}}:
+        fontcolor={{.TEXT_COLOR}}:
+        box=1:
+        boxcolor={{.TEXT_BG_COLOR}}:
+        boxborderw=10:
+        text='%{localtime\\:%A, %B %d, %Y %Z}':
+        x=(w-text_w)/2:
+        y=(h/2)-text_h-({{.LARGE_FONT_SIZE}}/2)-10,
+        drawtext=
+        fontfile='{{.FONT_FILE}}':
+        fontsize={{.LARGE_FONT_SIZE}}:
+        fontcolor={{.TEXT_COLOR}}:
+        box=1:
+        boxcolor={{.TEXT_BG_COLOR}}:
+        boxborderw=15:
+        text='%{localtime\\:%X}':
+        x=(w-text_w)/2:
+        y=(h-text_h)/2"
+        -pix_fmt {{.PIXEL_FMT}}
+        -f fbdev {{.FB_DEV}}
+
+  default:
+    desc: Display video clock
+    summary: |-
+      This task creates a video clock
+      by overlaying the current time onto a motion video background.
+    preconditions:
+      - sh: test -c {{.FB_DEV}}
+        msg: Framebuffer device not found
+      - sh: test -s {{.CURSOR_BLINK_FILE}}
+        msg: Cursor blink file not found
+      - sh: test -s {{.VIDEO_SOURCE}}
+        msg: Background video not found
+    vars:
+      TEMP_VIDEO_FILE:
+        sh: mktemp --tmpdir bg-XXXXX.mp4
+      ORYGINAL_CURSOR_STATE:
+        sh: cat {{.CURSOR_BLINK_FILE}}
+      FB_SIZE_STR:
+        sh: cat {{joinPath .FB_SYS_PATH "virtual_size"}}
+      SCREEN_SIZE:
+        ref: .FB_SIZE_STR | splitList  ","
+    cmds:
+      - cmd: echo 0 > {{.CURSOR_BLINK_FILE}}
+        ignore_error: true
+      - defer: echo {{.ORYGINAL_CURSOR_STATE}} > {{.CURSOR_BLINK_FILE}}
+      - task: pre-scale-bg
+        vars:
+          TEMP_VIDEO_FILE: '{{.TEMP_VIDEO_FILE}}'
+          SCREEN_W: '{{index .SCREEN_SIZE 0 | default 640}}'
+          SCREEN_H: '{{index .SCREEN_SIZE 1 | default 480}}'
+      - defer: rm {{.TEMP_VIDEO_FILE}}
+      - task: show-clock
+        vars:
+          TEMP_VIDEO_FILE: '{{.TEMP_VIDEO_FILE}}'
