@@ -1,0 +1,10 @@
+[Unit]
+Description=Digital Clock with Video Background
+
+[Service]
+Type=exec
+ExecStart=/usr/local/bin/%N
+MemorySwapMax=0
+
+[Install]
+WantedBy=multi-user.target
