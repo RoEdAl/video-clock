@@ -4,6 +4,8 @@ Description=Digital Clock with Video Background
 [Service]
 Type=exec
 ExecStart=/usr/local/bin/%N
+PrivateTmp=on
+PrivateNetwork=on
 MemorySwapMax=0
 
 [Install]
