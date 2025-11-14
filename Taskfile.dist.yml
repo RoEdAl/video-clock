@@ -58,6 +58,8 @@ tasks:
           -c:v libx264
           -preset ultrafast
           -tune fastdecode
+          -pix_fmt yuv420p
+          -profile:v main
           -crf 35
           -an
           {{.TEMP_VIDEO_FILE | shellQuote}}
@@ -243,7 +245,6 @@ tasks:
       - exit {{.DSTDIR | empty | ternary 1 0}}
     cmds:
       - systemctl -q daemon-reload
-      - echo System reboot is required!
 
   install:
     desc: Install required files
