@@ -25,8 +25,6 @@ vars:
   TEXT_COLOR: white
   TEXT_BG_COLOR: black@0.5 # Black with 50% opacity
   FB_DEV: /dev/fb0
-  PIXEL_FMT: rgb565le # rgba
-  FB_SYS_PATH: /sys/class/graphics/fb0
   CURSOR_BLINK_FILE: /sys/class/graphics/fbcon/cursor_blink
 
 tasks:
@@ -37,6 +35,7 @@ tasks:
         - TEMP_VIDEO_FILE
         - SCREEN_W
         - SCREEN_H
+        - PIXEL_FMT
     cmds:
       - >-
           ffmpeg
@@ -77,6 +76,7 @@ tasks:
     requires:
       vars:
         - TEMP_VIDEO_FILE
+        - PIXEL_FMT
     cmds:
       - >-
         ffmpeg
@@ -129,10 +129,20 @@ tasks:
         sh: mktemp --tmpdir bg-XXXXX.mp4
       ORYGINAL_CURSOR_STATE:
         sh: cat {{.CURSOR_BLINK_FILE}}
-      FB_SIZE_STR:
-        sh: cat {{joinPath .FB_SYS_PATH "virtual_size"}}
-      SCREEN_SIZE:
-        ref: .FB_SIZE_STR | splitList  ","
+      FB_INFO_STR:
+        sh: >-
+          ffprobe
+          -hide_banner
+          -v error
+          -print_format json
+          -f fbdev
+          -i "{{.FB_DEV}}"
+          -show_streams
+          -select_streams v:0
+      FB_INFO:
+        ref: index (fromJson .FB_INFO_STR) "streams" 0
+      PIXEL_FMT:
+        ref: index .FB_INFO "pix_fmt" | default "bgra"
     cmds:
       - cmd: echo 0 > {{.CURSOR_BLINK_FILE}}
         ignore_error: true
@@ -140,11 +150,13 @@ tasks:
       - task: pre-scale-bg
         vars:
           TEMP_VIDEO_FILE: '{{.TEMP_VIDEO_FILE}}'
-          SCREEN_W: '{{index .SCREEN_SIZE 0 | default 640}}'
-          SCREEN_H: '{{index .SCREEN_SIZE 1 | default 480}}'
+          SCREEN_W: '{{index .FB_INFO "width" | default 640}}'
+          SCREEN_H: '{{index .FB_INFO "height" | default 480}}'
+          PIXEL_FMT: '{{.PIXEL_FMT}}'
       - defer: rm {{.TEMP_VIDEO_FILE}}
       - task: show-clock
         vars:
           TEMP_VIDEO_FILE: '{{.TEMP_VIDEO_FILE}}'
+          PIXEL_FMT: '{{.PIXEL_FMT}}'
 
 
