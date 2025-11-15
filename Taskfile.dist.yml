@@ -26,7 +26,6 @@ vars:
   TEXT_COLOR: white
   TEXT_BG_COLOR: black@0.5 # Black with 50% opacity
   FB_DEV: /dev/fb0
-  CURSOR_BLINK_FILE: /sys/class/graphics/fbcon/cursor_blink
 
 tasks:
   pre-scale-bg:
@@ -121,8 +120,6 @@ tasks:
     preconditions:
       - sh: test -c {{.FB_DEV}}
         msg: Framebuffer device not found
-      - sh: test -s {{.CURSOR_BLINK_FILE}}
-        msg: Cursor blink file not found
       - sh: test -s {{.VIDEO_SOURCE}}
         msg: Background video not found
     vars:
@@ -145,9 +142,6 @@ tasks:
       PIXEL_FMT:
         ref: index .FB_INFO "pix_fmt" | default "bgra"
     cmds:
-      - cmd: echo 0 > {{.CURSOR_BLINK_FILE}}
-        ignore_error: true
-      - defer: echo {{.ORYGINAL_CURSOR_STATE}} > {{.CURSOR_BLINK_FILE}}
       - task: pre-scale-bg
         vars:
           TEMP_VIDEO_FILE: '{{.TEMP_VIDEO_FILE}}'

@@ -1,9 +1,12 @@
 [Unit]
 Description=Digital Clock with Video Background
+After=time-set.target
 
 [Service]
 Type=exec
 ExecStart=/usr/local/bin/%N
+User=%N
+Group=%N
 PrivateTmp=on
 PrivateNetwork=on
 MemorySwapMax=0
