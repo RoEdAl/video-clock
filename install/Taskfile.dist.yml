@@ -58,13 +58,13 @@ tasks:
       - task: install-dir 
         vars:
           SRC_PATH:
-            ref: .TASKFILE_DIR
+            ref: .ROOT_DIR
           DST_PATH:
             ref: .DST_DIR
       - task: install-systemd-service
         vars:
           SRC_DIR:
-            ref: .TASKFILE_DIR
+            ref: .ROOT_DIR
           DST_DIR:
             ref: .DST_DIR
           SYSTEMD_SERVICE: video-clock.service
@@ -77,12 +77,12 @@ tasks:
       - task: install-dir
         vars:
           SRC_PATH:
-            ref: .TASKFILE_DIR
+            ref: .ROOT_DIR
           DST_PATH:
             ref: .DST_DIR
       - task: install-file
         vars:
-          SRC_PATH: '{{joinPath .TASKFILE_DIR "video-clock.sh"}}'
+          SRC_PATH: '{{joinPath .ROOT_DIR "video-clock.sh"}}'
           DST_PATH: '{{joinPath .DST_DIR "video-clock"}}'
 
   install-usr-lib:
@@ -93,12 +93,12 @@ tasks:
       - task: install-dir
         vars:
           SRC_PATH:
-            ref: .TASKFILE_DIR
+            ref: .ROOT_DIR
           DST_PATH:
             ref: .DST_DIR
       - task: install-file
         vars:
-          SRC_PATH: '{{joinPath .TASKFILE_DIR "Taskfile.dist.yml"}}'
+          SRC_PATH: '{{joinPath .ROOT_DIR "Taskfile.dist.yml"}}'
           DST_PATH: '{{joinPath .DST_DIR "Taskfile.dist.yml"}}'
 
   post-install:
