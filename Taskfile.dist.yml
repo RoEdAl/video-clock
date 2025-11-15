@@ -16,6 +16,7 @@ includes:
   install:
     taskfile: install
     flatten: true
+    optional: true
 
 vars:
   VIDEO_SOURCE: '{{joinPath .TASKFILE_DIR "background.mp4"}}'
