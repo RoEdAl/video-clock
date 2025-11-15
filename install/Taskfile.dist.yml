@@ -1,0 +1,121 @@
+#
+# Video Clock
+# Installation routines
+#
+
+version: '3'
+
+tasks:
+  install-dir:
+    internal: on
+    run: when_changed
+    requires:
+      vars:
+        - SRC_PATH
+        - DST_PATH
+    status:
+      - test -d {{.DST_PATH}}
+    cmds:
+      - mkdir -p {{.DST_PATH}}
+      - touch -d -r {{.SRC_PATH}} {{.DST_PATH}}
+
+  install-file:
+    internal: on
+    run: when_changed
+    requires:
+      vars:
+        - SRC_PATH
+        - DST_PATH
+    status:
+      - test -s {{.DST_PATH}}
+      - test ! {{.SRC_PATH}} -ot {{.DST_PATH}}
+    cmds:
+      - cp --preserve=mode,timestamps {{.SRC_PATH}} {{.DST_PATH}}
+
+  install-systemd-service:
+    internal: on
+    requires:
+      vars:
+        - SRC_DIR
+        - DST_DIR
+        - SYSTEMD_SERVICE
+    vars:
+      SRC_PATH: '{{joinPath .SRC_DIR .SYSTEMD_SERVICE}}'
+      DST_PATH: '{{joinPath .DST_DIR .SYSTEMD_SERVICE}}'
+    cmds:
+      - task: install-file
+        vars:
+          SRC_PATH:
+            ref: .SRC_PATH
+          DST_PATH:
+            ref: .DST_PATH
+
+  install-systemd-system:
+    internal: on
+    vars:
+      DST_DIR: '{{joinPath (.DSTDIR | default "") "/" "usr" "local" "lib" "systemd" "system"}}'
+    cmds:
+      - task: install-dir 
+        vars:
+          SRC_PATH:
+            ref: .TASKFILE_DIR
+          DST_PATH:
+            ref: .DST_DIR
+      - task: install-systemd-service
+        vars:
+          SRC_DIR:
+            ref: .TASKFILE_DIR
+          DST_DIR:
+            ref: .DST_DIR
+          SYSTEMD_SERVICE: video-clock.service
+
+  install-usr-bin:
+    internal: on
+    vars:
+      DST_DIR: '{{joinPath (.DSTDIR | default "") "/" "usr" "local" "bin"}}'
+    cmds:
+      - task: install-dir
+        vars:
+          SRC_PATH:
+            ref: .TASKFILE_DIR
+          DST_PATH:
+            ref: .DST_DIR
+      - task: install-file
+        vars:
+          SRC_PATH: '{{joinPath .TASKFILE_DIR "video-clock.sh"}}'
+          DST_PATH: '{{joinPath .DST_DIR "video-clock"}}'
+
+  install-usr-lib:
+    internal: on
+    vars:
+      DST_DIR: '{{joinPath (.DSTDIR | default "") "/" "usr" "local" "lib" "video-clock"}}'
+    cmds:
+      - task: install-dir
+        vars:
+          SRC_PATH:
+            ref: .TASKFILE_DIR
+          DST_PATH:
+            ref: .DST_DIR
+      - task: install-file
+        vars:
+          SRC_PATH: '{{joinPath .TASKFILE_DIR "Taskfile.dist.yml"}}'
+          DST_PATH: '{{joinPath .DST_DIR "Taskfile.dist.yml"}}'
+
+  post-install:
+    internal: on
+    run: once
+    desc: Post installation tasks
+    status:
+      - exit {{.DSTDIR | empty | ternary 1 0}}
+    cmds:
+      - systemctl -q daemon-reload
+
+  install:
+    desc: Install required files
+    deps:
+      - task: install-usr-bin
+      - task: install-usr-lib
+      - task: install-systemd-system
+    cmds:
+      - task: post-install
+
