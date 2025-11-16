@@ -28,6 +28,7 @@ vars:
       TEXT_COLOR: '{{.TEXT_COLOR | default "white"}}'
       TEXT_BG_COLOR: '{{.TEXT_BG_COLOR | default "black@0.5"}}' # Black with 50% opacity
       FB_DEV: '{{.FB_DEV | default "/dev/fb0"}}'
+      FB_REFRESH_RATE: '{{.FB_REFRESH_RATE | default 15}}'
 
 tasks:
   pre-scale-bg:
@@ -48,7 +49,7 @@ tasks:
           -y -i {{.SETTINGS.VIDEO_SOURCE | shellQuote}}
           -filter_complex
           "scale={{.SCREEN_W}}:{{.SCREEN_H -}},
-          framerate=fps=15,
+          framerate=fps={{.SETTINGS.FB_REFRESH_RATE}},
           split[v1][i];
           [i]drawtext=
           fontfile='{{.SETTINGS.FONT_FILE}}':
