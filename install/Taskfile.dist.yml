@@ -50,7 +50,7 @@ tasks:
           DST_PATH:
             ref: .DST_PATH
 
-  install-systemd-service:
+  install-systemd-system:
     internal: on
     vars:
       DST_DIR: '{{joinPath (.DSTDIR | default "") "/" "usr" "local" "lib" "systemd" "system"}}'
@@ -165,7 +165,7 @@ tasks:
     deps:
       - task: install-usr-bin
       - task: install-usr-lib
-      - task: install-systemd-service
+      - task: install-systemd-system
       - task: install-tmpfiles-d
       - task: install-sysusers-d
       - task: install-dotenv
