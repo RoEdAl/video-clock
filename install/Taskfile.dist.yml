@@ -133,6 +133,22 @@ tasks:
           SRC_PATH: '{{joinPath .TASKFILE_DIR "sysuser"}}'
           DST_PATH: '{{joinPath .DST_DIR "video-clock"}}'
 
+  install-dotenv:
+    internal: on
+    vars:
+      DST_DIR: '{{joinPath (.DSTDIR | default "") "/" "usr" "local" "etc"}}'
+    cmds:
+      - task: install-dir
+        vars:
+          SRC_PATH:
+            ref: .ROOT_DIR
+          DST_PATH:
+            ref: .DST_DIR
+      - task: install-file
+        vars:
+          SRC_PATH: '{{joinPath .TASKFILE_DIR "settings.env"}}'
+          DST_PATH: '{{joinPath .DST_DIR "video-clock.env"}}'
+
   post-install:
     internal: on
     run: once
@@ -152,6 +168,7 @@ tasks:
       - task: install-systemd-system
       - task: install-tmpfiles-d
       - task: install-sysusers-d
+      - task: install-dotenv
     cmds:
       - task: post-install
 

@@ -3,6 +3,7 @@ Description=Digital Clock with Video Background
 After=time-set.target
 
 [Service]
+EnvironmentFile=-/usr/local/etc/%N.env
 Type=exec
 ExecStart=/usr/local/bin/%N
 User=%N

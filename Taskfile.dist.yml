@@ -19,13 +19,15 @@ includes:
     optional: true
 
 vars:
-  VIDEO_SOURCE: '{{joinPath .TASKFILE_DIR "background.mp4"}}'
-  FONT_FILE: /usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf
-  SMALL_FONT_SIZE: 30
-  LARGE_FONT_SIZE: 90
-  TEXT_COLOR: white
-  TEXT_BG_COLOR: black@0.5 # Black with 50% opacity
-  FB_DEV: /dev/fb0
+  SETTINGS:
+    map:
+      VIDEO_SOURCE: '{{.VIDEO_SOURCE | default (joinPath .TASKFILE_DIR "background.mp4")}}'
+      FONT_FILE: '{{.FONT_FILE | default "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"}}'
+      SMALL_FONT_SIZE: '{{.SMALL_FONT_SIZE | default 30}}'
+      LARGE_FONT_SIZE: '{{.LARGE_FONT_SIZE | default 90}}'
+      TEXT_COLOR: '{{.TEXT_COLOR | default "white"}}'
+      TEXT_BG_COLOR: '{{.TEXT_BG_COLOR | default "black@0.5"}}' # Black with 50% opacity
+      FB_DEV: '{{.FB_DEV | default "/dev/fb0"}}'
 
 tasks:
   pre-scale-bg:
@@ -43,17 +45,17 @@ tasks:
           -hide_banner
           -loglevel 'repeat+info'
           -nostdin
-          -y -i {{.VIDEO_SOURCE | shellQuote}}
+          -y -i {{.SETTINGS.VIDEO_SOURCE | shellQuote}}
           -filter_complex
           "scale={{.SCREEN_W}}:{{.SCREEN_H -}},
           framerate=fps=15,
           split[v1][i];
           [i]drawtext=
-          fontfile='{{.FONT_FILE}}':
-          fontsize={{.LARGE_FONT_SIZE}}:
-          fontcolor={{.TEXT_COLOR}}:
+          fontfile='{{.SETTINGS.FONT_FILE}}':
+          fontsize={{.SETTINGS.LARGE_FONT_SIZE}}:
+          fontcolor={{.SETTINGS.TEXT_COLOR}}:
           box=1:
-          boxcolor={{.TEXT_BG_COLOR}}:
+          boxcolor={{.SETTINGS.TEXT_BG_COLOR}}:
           boxborderw=15:
           text='Loading...':
           x=(w-text_w)/2:
@@ -69,7 +71,7 @@ tasks:
           {{.TEMP_VIDEO_FILE | shellQuote}}
           -map '[v2]'
           -pix_fmt {{.PIXEL_FMT}}
-          -f fbdev {{.FB_DEV}}
+          -f fbdev {{.SETTINGS.FB_DEV}}
 
   show-clock:
     internal: true
@@ -90,27 +92,27 @@ tasks:
         -stream_loop -1
         -i {{.TEMP_VIDEO_FILE}}
         -vf "drawtext=
-        fontfile='{{.FONT_FILE}}':
-        fontsize={{.SMALL_FONT_SIZE}}:
-        fontcolor={{.TEXT_COLOR}}:
+        fontfile='{{.SETTINGS.FONT_FILE}}':
+        fontsize={{.SETTINGS.SMALL_FONT_SIZE}}:
+        fontcolor={{.SETTINGS.TEXT_COLOR}}:
         box=1:
-        boxcolor={{.TEXT_BG_COLOR}}:
+        boxcolor={{.SETTINGS.TEXT_BG_COLOR}}:
         boxborderw=10:
         text='%{localtime\\:%A, %B %d, %Y %Z}':
         x=(w-text_w)/2:
-        y=(h/2)-text_h-({{.LARGE_FONT_SIZE}}/2)-10,
+        y=(h/2)-text_h-({{.SETTINGS.LARGE_FONT_SIZE}}/2)-10,
         drawtext=
-        fontfile='{{.FONT_FILE}}':
-        fontsize={{.LARGE_FONT_SIZE}}:
-        fontcolor={{.TEXT_COLOR}}:
+        fontfile='{{.SETTINGS.FONT_FILE}}':
+        fontsize={{.SETTINGS.LARGE_FONT_SIZE}}:
+        fontcolor={{.SETTINGS.TEXT_COLOR}}:
         box=1:
-        boxcolor={{.TEXT_BG_COLOR}}:
+        boxcolor={{.SETTINGS.TEXT_BG_COLOR}}:
         boxborderw=15:
         text='%{localtime\\:%X}':
         x=(w-text_w)/2:
         y=(h-text_h)/2"
         -pix_fmt {{.PIXEL_FMT}}
-        -f fbdev {{.FB_DEV}}
+        -f fbdev {{.SETTINGS.FB_DEV}}
 
   default:
     desc: Display video clock
@@ -118,9 +120,9 @@ tasks:
       This task creates a video clock
       by overlaying the current time onto a motion video background.
     preconditions:
-      - sh: test -c {{.FB_DEV}}
+      - sh: test -c {{.SETTINGS.FB_DEV}}
         msg: Framebuffer device not found
-      - sh: test -s {{.VIDEO_SOURCE}}
+      - sh: test -s {{.SETTINGS.VIDEO_SOURCE}}
         msg: Background video not found
     vars:
       TEMP_VIDEO_FILE:
@@ -134,7 +136,7 @@ tasks:
           -v error
           -print_format json
           -f fbdev
-          -i "{{.FB_DEV}}"
+          -i "{{.SETTINGS.FB_DEV}}"
           -show_streams
           -select_streams v:0
       FB_INFO:
