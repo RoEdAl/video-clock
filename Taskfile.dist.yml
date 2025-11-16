@@ -127,8 +127,6 @@ tasks:
     vars:
       TEMP_VIDEO_FILE:
         sh: mktemp --tmpdir bg-XXXXX.mp4
-      ORYGINAL_CURSOR_STATE:
-        sh: cat {{.CURSOR_BLINK_FILE}}
       FB_INFO_STR:
         sh: >-
           ffprobe
