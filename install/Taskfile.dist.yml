@@ -50,7 +50,7 @@ tasks:
           DST_PATH:
             ref: .DST_PATH
 
-  install-systemd-system:
+  install-systemd-service:
     internal: on
     vars:
       DST_DIR: '{{joinPath (.DSTDIR | default "") "/" "usr" "local" "lib" "systemd" "system"}}'
@@ -64,7 +64,7 @@ tasks:
       - task: install-systemd-service
         vars:
           SRC_DIR:
-            ref: .ROOT_DIR
+            ref: .TASKFILE_DIR
           DST_DIR:
             ref: .DST_DIR
           SYSTEMD_SERVICE: video-clock.service
@@ -82,7 +82,7 @@ tasks:
             ref: .DST_DIR
       - task: install-file
         vars:
-          SRC_PATH: '{{joinPath .ROOT_DIR "video-clock.sh"}}'
+          SRC_PATH: '{{joinPath .TASKFILE_DIR "video-clock.sh"}}'
           DST_PATH: '{{joinPath .DST_DIR "video-clock"}}'
 
   install-usr-lib:
@@ -165,7 +165,7 @@ tasks:
     deps:
       - task: install-usr-bin
       - task: install-usr-lib
-      - task: install-systemd-system
+      - task: install-systemd-service
       - task: install-tmpfiles-d
       - task: install-sysusers-d
       - task: install-dotenv
