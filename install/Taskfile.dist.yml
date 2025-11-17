@@ -131,7 +131,7 @@ tasks:
       - task: install-file
         vars:
           SRC_PATH: '{{joinPath .TASKFILE_DIR "sysuser"}}'
-          DST_PATH: '{{joinPath .DST_DIR "video-clock"}}'
+          DST_PATH: '{{joinPath .DST_DIR "video-clock.conf"}}'
 
   install-dotenv:
     internal: on
@@ -157,7 +157,7 @@ tasks:
       - exit {{.DSTDIR | empty | ternary 1 0}}
     cmds:
       - systemctl -q daemon-reload
-      - touch /usr/local
+      - touch /usr
       - echo System reboot is required!      
 
   install:
