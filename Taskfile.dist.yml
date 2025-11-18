@@ -155,4 +155,27 @@ tasks:
           TEMP_VIDEO_FILE: '{{.TEMP_VIDEO_FILE}}'
           PIXEL_FMT: '{{.PIXEL_FMT}}'
 
+  show-settings:
+    desc: Display settings
+    cmds:
+      - for: {var: SETTINGS }
+        cmd: echo {{.KEY}}={{.ITEM | shellQuote}}
+
+  show-fb-info:
+    desc: Display framebuffer data
+    vars:
+      FB_INFO_STR:
+        sh: >-
+          ffprobe
+          -hide_banner
+          -v error
+          -print_format json
+          -f fbdev
+          -i "{{.SETTINGS.FB_DEV}}"
+          -show_streams
+          -select_streams v:0
+      FB_INFO:
+        ref: index (fromJson .FB_INFO_STR) "streams" 0
+    cmds:
+      - echo '{{.SETTINGS.FB_DEV}}:' {{index .FB_INFO "width" | default "unknown"}}x{{index .FB_INFO "height" | default "unknown"}} [{{index .FB_INFO "pix_fmt" | default "unknown"}}]
 
